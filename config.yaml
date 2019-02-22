@@ -1,0 +1,4 @@
+--- 
+username: admin
+password: admin
+host: http://localhost:8080/SEMP/v2/config

@@ -9,6 +9,7 @@ use tokio_core::reactor::Core;
 use std::prelude::v1::Vec;
 use colored::*;
 use futures::{Future};
+use serde::{Serialize, Deserialize};
 use serde_json;
 use solace_semp_client::apis::Error;
 use solace_semp_client::models::MsgVpnsResponse;
@@ -17,19 +18,18 @@ use futures::Async;
 use hyper::client::HttpConnector;
 use std::env;
 use clap::{Arg, App, SubCommand};
+use serde_yaml;
+use log::{info, trace, warn};
+use std::process::exit;
 
-
-// generate a credential
-fn gencred(username: String, password: String) -> BasicAuth {
-    println!("{}", "generating credentials".green());
-    let password: Option<String> = Some(password);
-    BasicAuth::from((username, password ))
-}
-
+mod clientconfig;
+mod helpers;
+mod provision_vpn;
 
 fn main() {
 
-    println!("{}", "Solace Provisioner".yellow());
+    //println!("{}", "Solace Provisioner".yellow());
+    info!(target: "solace-provision", "{} {}", "Solace".red(), "Provisioner".blue());
 
     // Handle args
     let matches = App::new("Solace Provisioner")
@@ -48,22 +48,23 @@ fn main() {
             .index(1))
         .get_matches();
 
-    let config = matches.value_of("config").unwrap_or("default.yaml");
+    // get the config file name
+    let config_file_name = matches.value_of("config").unwrap_or("default.yaml");
 
     // Try autocomete matches methods here to see issue: https://github.com/intellij-rust/intellij-rust/issues/2525
-    let provisionplan = matches.value_of("INPUT").unwrap_or("provision.yaml");
+    let provision_plan_file_name = matches.value_of("INPUT").unwrap_or("provision.yaml");
 
-
-    println!("{}{}", "config file: ".white(), config.to_owned().green());
-    println!("{}{}", "provision plan: ".white(), provisionplan.to_owned().blue());
+    println!("{}{}", "using config file: ".white(), config_file_name.to_owned().green());
+    println!("{}{}", "using provision plan: ".white(), provision_plan_file_name.to_owned().blue());
+    
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();
     let hyperclient = Client::new(&handle);
-    let auth = gencred("admin".to_owned(), "admin".to_owned());
+    let auth = helpers::gencred("admin".to_owned(), "admin".to_owned());
 
     // the configuration for the APIClient
-    let configuration = Configuration {
+    let mut configuration = Configuration {
         base_path: "http://localhost:8080/SEMP/v2/config".to_owned(),
         user_agent: Some("Swagger-Codegen/2.10/rust".to_owned()),
         client: hyperclient,
@@ -71,6 +72,19 @@ fn main() {
         oauth_access_token: None,
         api_key: None,
     };
+
+
+    match clientconfig::readconfig(config_file_name.to_owned()) {
+        Ok(yaml_str) => {
+            configuration.base_path = yaml_str.host;
+            let auth = helpers::gencred(yaml_str.username, yaml_str.password);
+            configuration.basic_auth=Some(auth);
+        },
+        Err(e) => {
+            println!("{}: {}", "Error reading yaml".red(), e);
+            exit(1);
+        }
+    }
 
     // the API Client from swagger spec
     let client = APIClient::new(configuration);
@@ -87,7 +101,7 @@ fn main() {
     //type ShowVpnResponse = Box<Future<Item=MsgVpnsResponse, Error=Error<serde_json::Value>>>;
 
     println!("{}", "Composing request".green());
-    let  resp = client
+    let resp = client
         .msg_vpn_api()
         .get_msg_vpns(10, "", wherevec, selectvec)
         .and_then(|vpn| {
@@ -95,10 +109,28 @@ fn main() {
             futures::future::ok(())
         });
 
-
     println!("{}", "Making request".green());
     core.run(resp).expect("Failed request");
     println!("{}", "Requests made".yellow());
+
+
+    println!("{}", "Creating VPNS");
+    //provision_vpn::provision(provision_plan_file_name.to_owned(), client, &core);
+    match provision_vpn::provision(provision_plan_file_name.to_owned()) {
+        Ok(vpn) => {
+            let resp = client
+                .default_api()
+                .create_msg_vpn(vpn, Vec::new())
+                .and_then(|vpn| {
+                    print!("{:?}", vpn);
+                    futures::future::ok(())
+                });
+            core.run(resp).expect("Failed request");
+        },
+        Err(e) => {
+            println!("provision error: {}", e);
+        }
+    }
 
 
 
