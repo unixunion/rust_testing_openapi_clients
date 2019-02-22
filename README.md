@@ -9,8 +9,14 @@
 It is impossible to create an EventThreshold because you MUST set all values, and setting Both clearValue and clearPercent
 results in a error from the appliance.
 
+## Setting *VALUE or *PERCENT to 0 in EventThreshold
+
     "Conflicting attribute \"clearValue\" used with \"clearPercent\"."
 
+## Not setting *VALUE or *PERCENT in EventThreshold, effective Null
+
+    "Problem with eventConnectionCountThreshold.clearValue: Got value `None` of type `null`. Value must
+     be of type(s): `(\'integer\',)`
 
 ## References
 
