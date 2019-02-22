@@ -1,6 +1,6 @@
 
-extern crate solace_semp_client;
-extern crate colored;
+//extern crate solace_semp_client;
+//extern crate colored;
 
 use solace_semp_client::apis::client::APIClient;
 use solace_semp_client::apis::configuration::Configuration;
@@ -15,6 +15,8 @@ use solace_semp_client::models::MsgVpnsResponse;
 use solace_semp_client::apis::configuration::BasicAuth;
 use futures::Async;
 use hyper::client::HttpConnector;
+use std::env;
+use clap::{Arg, App, SubCommand};
 
 
 // generate a credential
@@ -27,7 +29,33 @@ fn gencred(username: String, password: String) -> BasicAuth {
 
 fn main() {
 
-    println!("{}", "starting up".yellow());
+    println!("{}", "Solace Provisioner".yellow());
+
+    // Handle args
+    let matches = App::new("Solace Provisioner")
+        .version("1.0")
+        .author("Kegan Holtzhausen <marzubus@gmail.com>")
+        .about("Creates solace managed objects")
+        .arg(Arg::with_name("config")
+            .short("c")
+            .long("config")
+            .value_name("CONFIG")
+            .help("Sets a custom config file")
+            .takes_value(true))
+        .arg(Arg::with_name("INPUT")
+            .help("The provision plan")
+            .required(true)
+            .index(1))
+        .get_matches();
+
+    let config = matches.value_of("config").unwrap_or("default.yaml");
+
+    // Try autocomete matches methods here to see issue: https://github.com/intellij-rust/intellij-rust/issues/2525
+    let provisionplan = matches.value_of("INPUT").unwrap_or("provision.yaml");
+
+
+    println!("{}{}", "config file: ".white(), config.to_owned().green());
+    println!("{}{}", "provision plan: ".white(), provisionplan.to_owned().blue());
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();
