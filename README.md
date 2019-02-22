@@ -1,4 +1,6 @@
-# Rust Solace Client
+# Rust Solace Provision
+
+This is an experiment to determine if Rust is a good candidate for a non-brittle provisioniong framework for Solace Appliances.
 
     docker-compose up -d
     # wait for solace to come up

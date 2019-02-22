@@ -1,11 +1,9 @@
 /*
 
-config structs and methods relateing to the clients connection towards the appliances
+config structs and methods relating to the clients connection towards the appliances
 
 */
 
-//use solace_semp_client::apis::configuration::Configuration;
-//use solace_semp_client::apis::configuration::BasicAuth;
 
 use hyper::Client;
 
@@ -20,17 +18,6 @@ pub struct SolaceApiConfig {
     pub password: String,
     pub host: String
 }
-
-//pub fn create_client_config(hyperclient: Client<HttpConnector>, auth: BasicAuth) -> Configuration<hyper::client::Connect>  {
-//    Configuration {
-//        base_path: "http://localhost:8080/SEMP/v2/config".to_owned(),
-//        user_agent: Some("Swagger-Codegen/2.10/rust".to_owned()),
-//        client: hyperclient,
-//        basic_auth: Some(auth),
-//        oauth_access_token: None,
-//        api_key: None,
-//    }
-//}
 
 
 pub fn readconfig(config: String) -> Result<SolaceApiConfig, Box<std::error::Error>> {

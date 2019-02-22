@@ -21,7 +21,7 @@ distributedCacheManagementEnabled: true
 enabled: true
 eventConnectionCountThreshold:
   clearPercent: 40
-  clearValue: 0
+  #clearValue: 0
   setPercent: 60
   setValue: 0
 eventEgressFlowCountThreshold:
