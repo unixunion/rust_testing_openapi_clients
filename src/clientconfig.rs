@@ -5,12 +5,12 @@ config structs and methods relating to the clients connection towards the applia
 */
 
 
-use hyper::Client;
+//use hyper::Client;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
 
-use hyper::client::HttpConnector;
+//use hyper::client::HttpConnector;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct SolaceApiConfig {
